@@ -15,7 +15,7 @@ use AssemblyAI\Parameters\TranscriptParams;
 $apiKey = getenv('ASSEMBLYAI_API_KEY') ?: 'YOUR_API_KEY';
 $client = new AssemblyAI($apiKey);
 
-$audioUrl = 'https://storage.googleapis.com/aai-web-samples/5_行业数智化.wav';
+$audioUrl = 'https://storage.googleapis.com/aai-web-samples/gettysburg.wav';
 
 echo "1. Starting audio transcription..." . PHP_EOL;
 
