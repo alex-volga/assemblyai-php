@@ -1,5 +1,8 @@
 # AssemblyAI PHP SDK
 
+[![CI](https://github.com/alex-volga/assemblyai-php/actions/workflows/ci.yml/badge.svg)](https://github.com/alex-volga/assemblyai-php/actions/workflows/ci.yml)
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/alex-volga/assemblyai-php.svg)](https://packagist.org/packages/alex-volga/assemblyai-php)
+[![Total Downloads](https://img.shields.io/packagist/dt/alex-volga/assemblyai-php.svg)](https://packagist.org/packages/alex-volga/assemblyai-php)
 [![PHP Version](https://img.shields.io/badge/php-%3E%3D8.3-8892BF.svg)](https://php.net)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
@@ -25,7 +28,7 @@ Designed from the ground up following modern PHP 8.3+ best practices:
 Install via Composer:
 
 ```bash
-composer require assemblyai/assemblyai-php
+composer require alex-volga/assemblyai-php
 ```
 
 > **Requirements:**
