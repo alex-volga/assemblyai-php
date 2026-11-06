@@ -31,6 +31,9 @@ Install via Composer:
 composer require alex-volga/assemblyai-php
 ```
 
+> [!TIP]
+> **Using Laravel?** Check out [alex-volga/assemblyai-laravel](https://github.com/alex-volga/assemblyai-laravel) for seamless Laravel integration with Auto-Discovery, Facades, and config publishing.
+
 > **Requirements:**
 > - PHP 8.3 or higher
 > - `ext-json` and `ext-curl` (or an alternative PSR-18 HTTP client)
@@ -385,6 +388,17 @@ vendor/bin/phpunit
 # Run static analysis with PHPStan (Level 8)
 vendor/bin/phpstan analyse
 ```
+
+---
+
+## Laravel Integration
+
+If you are working with Laravel, check out the dedicated package [alex-volga/assemblyai-laravel](https://github.com/alex-volga/assemblyai-laravel):
+
+- Package auto-discovery
+- `AssemblyAI` Facade
+- Config file publishing (`config/assemblyai.php`)
+- Dependency injection via Laravel's Service Container
 
 ---
 
