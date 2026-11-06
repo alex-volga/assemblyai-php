@@ -18,11 +18,16 @@ final class TranscriptParams
      * @param list<PiiPolicy|string>|null $redactPiiPolicies
      * @param list<string>|null $keytermsPrompt
      * @param list<string>|null $topics
-     * @param array<string, list<string>>|null $customSpelling
+     * @param list<array{from: list<string>, to: string}>|array<string, list<string>|string>|null $customSpelling
      * @param array<string, mixed> $extra
      * @param list<SpeechModel|string>|null $speechModels
      * @param SpeechModel|string|null $speechModel Deprecated: Use $speechModels instead.
      * @param array<string, mixed>|null $speechUnderstanding
+     * @param list<string>|null $languageCodes
+     * @param array<string, mixed>|null $languageDetectionOptions
+     * @param array<string, mixed>|null $speakerOptions
+     * @param array<string, mixed>|null $redactPiiAudioOptions
+     * @param array<string, list<string>>|null $redactStaticEntities
      */
     public function __construct(
         public string $audioUrl,
@@ -64,7 +69,26 @@ final class TranscriptParams
         public array $extra = [],
         public ?array $speechModels = null,
         public ?array $speechUnderstanding = null,
+        public ?bool $multichannel = null,
+        public ?int $contentSafetyConfidence = null,
+        public ?string $domain = null,
+        public ?array $languageCodes = null,
+        public ?float $languageConfidenceThreshold = null,
+        public ?array $languageDetectionOptions = null,
+        public ?float $speechThreshold = null,
+        public ?array $speakerOptions = null,
+        public ?string $redactPiiAudioQuality = null,
+        public ?array $redactPiiAudioOptions = null,
+        public ?bool $redactPiiReturnUnredacted = null,
+        public ?array $redactStaticEntities = null,
+        public ?string $removeAudioTags = null,
+        public ?float $temperature = null,
     ) {
+        if ($this->multichannel === null && $this->dualChannel !== null) {
+            $this->multichannel = $this->dualChannel;
+        } elseif ($this->multichannel !== null && $this->dualChannel === null) {
+            $this->dualChannel = $this->multichannel;
+        }
         if ($this->speechModels === null && $this->speechModel !== null) {
             $this->speechModels = [$this->speechModel];
         } elseif ($this->speechModels !== null && $this->speechModel === null && count($this->speechModels) > 0) {
@@ -114,10 +138,54 @@ final class TranscriptParams
         return $this;
     }
 
-    public function withSpeakerLabels(bool $enabled = true, ?int $speakersExpected = null): self
+    /**
+     * @param list<string> $codes
+     */
+    public function withLanguageCodes(array $codes): self
     {
+        $this->languageCodes = $codes;
+        $this->languageDetection = true;
+        return $this;
+    }
+
+    public function withLanguageConfidenceThreshold(?float $threshold): self
+    {
+        $this->languageConfidenceThreshold = $threshold;
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function withLanguageDetectionOptions(array $options): self
+    {
+        $this->languageDetectionOptions = $options;
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed>|null $speakerOptions
+     */
+    public function withSpeakerLabels(
+        bool $enabled = true,
+        ?int $speakersExpected = null,
+        ?array $speakerOptions = null,
+    ): self {
         $this->speakerLabels = $enabled;
         $this->speakersExpected = $speakersExpected;
+        if ($speakerOptions !== null) {
+            $this->speakerOptions = $speakerOptions;
+        }
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed> $options
+     */
+    public function withSpeakerOptions(array $options): self
+    {
+        $this->speakerLabels = true;
+        $this->speakerOptions = $options;
         return $this;
     }
 
@@ -133,10 +201,19 @@ final class TranscriptParams
         return $this;
     }
 
-    public function withDualChannel(bool $enabled = true): self
+    public function withMultichannel(bool $enabled = true): self
     {
+        $this->multichannel = $enabled;
         $this->dualChannel = $enabled;
         return $this;
+    }
+
+    /**
+     * @deprecated Use withMultichannel() instead.
+     */
+    public function withDualChannel(bool $enabled = true): self
+    {
+        return $this->withMultichannel($enabled);
     }
 
     public function withAutoChapters(bool $enabled = true): self
@@ -167,9 +244,55 @@ final class TranscriptParams
         return $this;
     }
 
-    public function withContentSafety(bool $enabled = true): self
+    public function withContentSafety(bool $enabled = true, ?int $confidence = null): self
     {
         $this->contentSafety = $enabled;
+        $this->contentSafetyConfidence = $confidence;
+        return $this;
+    }
+
+    public function withDomain(?string $domain): self
+    {
+        $this->domain = $domain;
+        return $this;
+    }
+
+    public function withSpeechThreshold(?float $threshold): self
+    {
+        $this->speechThreshold = $threshold;
+        return $this;
+    }
+
+    public function withDisfluencies(bool $enabled = true): self
+    {
+        $this->disfluencies = $enabled;
+        return $this;
+    }
+
+    public function withFilterProfanity(bool $enabled = true): self
+    {
+        $this->filterProfanity = $enabled;
+        return $this;
+    }
+
+    public function withTemperature(?float $temperature): self
+    {
+        $this->temperature = $temperature;
+        return $this;
+    }
+
+    public function withRemoveAudioTags(?string $option = 'all'): self
+    {
+        $this->removeAudioTags = $option;
+        return $this;
+    }
+
+    /**
+     * @param list<array{from: list<string>, to: string}>|array<string, list<string>|string> $customSpelling
+     */
+    public function withCustomSpelling(array $customSpelling): self
+    {
+        $this->customSpelling = $customSpelling;
         return $this;
     }
 
@@ -226,16 +349,44 @@ final class TranscriptParams
 
     /**
      * @param list<PiiPolicy|string>|null $policies
+     * @param array<string, mixed>|null $audioOptions
+     * @param array<string, list<string>>|null $staticEntities
      */
     public function withPiiRedaction(
         ?array $policies = null,
-        PiiSubstitution|string $sub = PiiSubstitution::EntityType,
+        PiiSubstitution|string $sub = PiiSubstitution::EntityName,
         bool $redactAudio = false,
+        ?string $audioQuality = null,
+        ?array $audioOptions = null,
+        ?bool $returnUnredacted = null,
+        ?array $staticEntities = null,
     ): self {
         $this->redactPii = true;
         $this->redactPiiPolicies = $policies;
         $this->redactPiiSub = $sub;
         $this->redactPiiAudio = $redactAudio;
+        if ($audioQuality !== null) {
+            $this->redactPiiAudioQuality = $audioQuality;
+        }
+        if ($audioOptions !== null) {
+            $this->redactPiiAudioOptions = $audioOptions;
+        }
+        if ($returnUnredacted !== null) {
+            $this->redactPiiReturnUnredacted = $returnUnredacted;
+        }
+        if ($staticEntities !== null) {
+            $this->redactStaticEntities = $staticEntities;
+        }
+        return $this;
+    }
+
+    /**
+     * @param array<string, list<string>> $entities
+     */
+    public function withStaticEntityRedaction(array $entities): self
+    {
+        $this->redactPii = true;
+        $this->redactStaticEntities = $entities;
         return $this;
     }
 
@@ -315,6 +466,44 @@ final class TranscriptParams
     }
 
     /**
+     * @return list<array{from: list<string>, to: string}>|null
+     */
+    private function normalizeCustomSpelling(): ?array
+    {
+        if ($this->customSpelling === null) {
+            return null;
+        }
+
+        $result = [];
+        /** @var mixed $value */
+        foreach ($this->customSpelling as $key => $value) {
+            if (is_array($value) && isset($value['to'], $value['from'])) {
+                /** @var mixed $from */
+                $from = $value['from'];
+                $fromList = is_array($from)
+                    ? array_map(static fn (mixed $item): string => (string) $item, array_values($from))
+                    : [(string) $from];
+
+                $result[] = [
+                    'from' => $fromList,
+                    'to' => (string) $value['to'],
+                ];
+            } else {
+                $fromList = is_array($value)
+                    ? array_map(static fn (mixed $item): string => (string) $item, array_values($value))
+                    : [(string) $value];
+
+                $result[] = [
+                    'from' => $fromList,
+                    'to' => (string) $key,
+                ];
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -331,15 +520,22 @@ final class TranscriptParams
 
         $speechUnderstanding = $this->buildSpeechUnderstandingConfig();
 
+        $multichannel = $this->multichannel ?? $this->dualChannel;
+
+        $customSpelling = $this->normalizeCustomSpelling();
+
         $data = [
             'audio_url' => $this->audioUrl,
             'speech_models' => $serializedSpeechModels,
             'speech_understanding' => $speechUnderstanding,
             'language_code' => $this->languageCode,
+            'language_codes' => $this->languageCodes,
+            'language_confidence_threshold' => $this->languageConfidenceThreshold,
             'language_detection' => $this->languageDetection,
+            'language_detection_options' => $this->languageDetectionOptions,
             'punctuate' => $this->punctuate,
             'format_text' => $this->formatText,
-            'dual_channel' => $this->dualChannel,
+            'multichannel' => $multichannel,
             'webhook_url' => $this->webhookUrl,
             'webhook_auth_header_name' => $this->webhookAuthHeaderName,
             'webhook_auth_header_value' => $this->webhookAuthHeaderValue,
@@ -350,28 +546,54 @@ final class TranscriptParams
             'filter_profanity' => $this->filterProfanity,
             'redact_pii' => $this->redactPii,
             'redact_pii_audio' => $this->redactPiiAudio,
+            'redact_pii_audio_quality' => $this->redactPiiAudioQuality,
+            'redact_pii_audio_options' => $this->redactPiiAudioOptions,
+            'redact_pii_return_unredacted' => $this->redactPiiReturnUnredacted,
             'redact_pii_policies' => $this->redactPiiPolicies !== null ? array_map(
-                static fn ($p) => $p instanceof PiiPolicy ? $p->value : (string) $p,
+                static function ($p): string {
+                    $val = $p instanceof PiiPolicy ? $p->value : (string) $p;
+                    return match ($val) {
+                        'physical_address' => PiiPolicy::LocationAddress->value,
+                        'pin' => PiiPolicy::NumberSequence->value,
+                        default => $val,
+                    };
+                },
                 $this->redactPiiPolicies,
             ) : null,
-            'redact_pii_sub' => $this->redactPiiSub instanceof PiiSubstitution ? $this->redactPiiSub->value : $this->redactPiiSub,
+            'redact_pii_sub' => match ($this->redactPiiSub) {
+                null => null,
+                'entity_type' => PiiSubstitution::EntityName->value,
+                default => $this->redactPiiSub instanceof PiiSubstitution ? $this->redactPiiSub->value : $this->redactPiiSub,
+            },
+            'redact_static_entities' => $this->redactStaticEntities,
             'speaker_labels' => $this->speakerLabels,
             'speakers_expected' => $this->speakersExpected,
+            'speaker_options' => $this->speakerOptions,
             'content_safety' => $this->contentSafety,
+            'content_safety_confidence' => $this->contentSafetyConfidence,
             'iab_categories' => $this->iabCategories,
             'sentiment_analysis' => $this->sentimentAnalysis,
             'auto_highlights' => $this->autoHighlights,
             'entity_detection' => $this->entityDetection,
-            'custom_spelling' => $this->customSpelling,
+            'custom_spelling' => $customSpelling,
             'disfluencies' => $this->disfluencies,
+            'domain' => $this->domain,
             'prompt' => $this->prompt,
             'keyterms_prompt' => $this->keytermsPrompt,
+            'speech_threshold' => $this->speechThreshold,
+            'temperature' => $this->temperature,
+            'remove_audio_tags' => $this->removeAudioTags,
             'custom_topics' => $this->customTopics,
             'topics' => $this->topics,
         ];
 
         // Merge extra parameters and remove nulls
         $merged = array_merge($data, $this->extra);
+
+        if (isset($merged['dual_channel'])) {
+            $merged['multichannel'] ??= $merged['dual_channel'];
+            unset($merged['dual_channel']);
+        }
 
         if (isset($merged['speech_model'])) {
             if (!isset($merged['speech_models'])) {

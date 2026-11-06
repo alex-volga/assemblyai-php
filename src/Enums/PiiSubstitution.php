@@ -6,6 +6,11 @@ namespace AssemblyAI\Enums;
 
 enum PiiSubstitution: string
 {
-    case EntityType = 'entity_type';
+    case EntityName = 'entity_name';
     case Hash = 'hash';
+
+    /**
+     * @deprecated Use PiiSubstitution::EntityName instead.
+     */
+    public const EntityType = self::EntityName;
 }

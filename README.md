@@ -147,7 +147,7 @@ $params = TranscriptParams::create($uploadUrl)
     // PII Redaction
     ->withPiiRedaction(
         policies: [PiiPolicy::EmailAddress, PiiPolicy::PhoneNumber, PiiPolicy::CreditCardNumber],
-        sub: PiiSubstitution::EntityType
+        sub: PiiSubstitution::EntityName
     )
     // Contextual Prompting & Word Boosting
     ->withPrompt('Technical podcast discussing machine learning and software architecture')

@@ -43,6 +43,8 @@ final readonly class Transcript
         public ?string $speechModelUsed = null,
         public ?array $speechModels = null,
         public ?array $speechUnderstanding = null,
+        public ?bool $multichannel = null,
+        public ?int $audioChannels = null,
     ) {
     }
 
@@ -156,13 +158,15 @@ final readonly class Transcript
             speechModel: $speechModel,
             punctuate: isset($data['punctuate']) ? (bool) $data['punctuate'] : null,
             formatText: isset($data['format_text']) ? (bool) $data['format_text'] : null,
-            dualChannel: isset($data['dual_channel']) ? (bool) $data['dual_channel'] : null,
+            dualChannel: isset($data['multichannel']) ? (bool) $data['multichannel'] : (isset($data['dual_channel']) ? (bool) $data['dual_channel'] : null),
             webhookUrl: isset($data['webhook_url']) ? (string) $data['webhook_url'] : null,
             webhookStatusCode: isset($data['webhook_status_code']) ? (int) $data['webhook_status_code'] : null,
             raw: $data,
             speechModelUsed: $speechModelUsed ?? $speechModel,
             speechModels: $speechModels,
             speechUnderstanding: $speechUnderstanding,
+            multichannel: isset($data['multichannel']) ? (bool) $data['multichannel'] : (isset($data['dual_channel']) ? (bool) $data['dual_channel'] : null),
+            audioChannels: isset($data['audio_channels']) ? (int) $data['audio_channels'] : null,
         );
     }
 

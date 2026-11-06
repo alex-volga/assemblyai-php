@@ -5,6 +5,24 @@ All notable changes to `alex-volga/assemblyai-php` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-06
+
+### Added
+- Complete alignment of `TranscriptParams` with the official AssemblyAI `POST /v2/transcript` specification.
+- Expanded `PiiPolicy` enum with all 54 official AssemblyAI PII redaction policies (e.g. `LocationAddress`, `LocationCity`, `MedicalCondition`, `Drug`, `AccountNumber`, `BloodType`, etc.).
+- Support for `domain` parameter (e.g., Medical Mode via `withDomain('medical-v1')`).
+- Support for `multichannel` transcription (`withMultichannel()`), replacing deprecated `dual_channel`.
+- Support for `language_codes` (code switching), `language_confidence_threshold`, and `language_detection_options`.
+- Support for `content_safety_confidence` in `withContentSafety()`.
+- Support for `speaker_options` (`min_speakers_expected`, `max_speakers_expected`, `include_speaker_confidence`) via `withSpeakerOptions()` and `withSpeakerLabels()`.
+- Support for advanced PII Redaction options (`redact_pii_audio_quality`, `redact_pii_audio_options`, `redact_pii_return_unredacted`, `redact_static_entities`).
+- Support for `speech_threshold`, `temperature`, `remove_audio_tags`, `disfluencies`, `filter_profanity`, and `custom_spelling`.
+- Added `$multichannel` and `$audioChannels` to `Transcript` value object.
+
+### Fixed
+- Fixed invalid `redact_pii_sub` value: corrected `PiiSubstitution::EntityName = 'entity_name'` (was `entity_type`), resolving API validation error.
+- Backward compatibility aliases: `PiiSubstitution::EntityType` and `PiiPolicy::PhysicalAddress`, `PiiPolicy::Pin` now safely map to their valid API equivalents.
+
 ## [1.2.0] - 2026-11-06
 
 ### Added
