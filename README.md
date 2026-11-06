@@ -121,7 +121,7 @@ Use the `TranscriptParams` builder to configure transcription options:
 
 ```php
 use AssemblyAI\Enums\SpeechModel;
-use AssemblyAI\Enums\SummaryModel;
+use AssemblyAI\Enums\SummaryEffort;
 use AssemblyAI\Enums\SummaryType;
 use AssemblyAI\Enums\PiiPolicy;
 use AssemblyAI\Enums\PiiSubstitution;
@@ -136,11 +136,11 @@ $params = TranscriptParams::create($uploadUrl)
     // Formatting & Punctuation
     ->withPunctuate(true)
     ->withFormatText(true)
-    // Audio Intelligence
+    // Audio Intelligence & Speech Understanding
     ->withAutoChapters(true)
     ->withSentimentAnalysis(true)
     ->withEntityDetection(true)
-    ->withSummarization(SummaryType::Bullets, SummaryModel::Informative)
+    ->withSummarization(SummaryType::Bullets, effort: SummaryEffort::Low)
     // PII Redaction
     ->withPiiRedaction(
         policies: [PiiPolicy::EmailAddress, PiiPolicy::PhoneNumber, PiiPolicy::CreditCardNumber],

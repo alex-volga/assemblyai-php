@@ -5,6 +5,22 @@ All notable changes to `alex-volga/assemblyai-php` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Migration to AssemblyAI's LLM-powered Speech Understanding architecture for Summarization and Auto Chapters.
+- Added `SummaryEffort` enum (`low`, `medium`).
+- Added `TranscriptParams::withSpeechUnderstanding()` for direct Speech Understanding configuration.
+- Added `TranscriptParams::withSummarization(..., effort: ...)` with `effort` parameter support.
+- Added `$speechUnderstanding` property to `Transcript` value object.
+- Added `$text` property to `AutoChapter` value object and made `$gist` optional with fallback to `$headline`.
+
+### Changed
+- `TranscriptParams::withAutoChapters()` and `withSummarization()` now seamlessly output `speech_understanding.request.summarization` without deprecated top-level flags.
+- Legacy `auto_chapters` and `summarization` parameters passed via `extra` are automatically migrated and removed from top-level payload.
+- `Transcript::fromArray()` parses topic-based summaries from `speech_understanding.response.summarization` into `$transcript->chapters` and generates combined `$transcript->summary`.
+- Deprecated `SummaryModel` enum and legacy `SummaryType` cases (`headline`, `gist`, `bullets_verbose`), automatically mapping them to modern types (`bullets` or `paragraph`).
+
 ## [1.1.0] - 2026-11-06
 
 ### Added

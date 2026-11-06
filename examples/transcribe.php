@@ -7,8 +7,6 @@ require_once __DIR__ . '/../vendor/autoload.php';
 use AssemblyAI\AssemblyAI;
 use AssemblyAI\Enums\SpeechModel;
 use AssemblyAI\Enums\SubtitleFormat;
-use AssemblyAI\Enums\SummaryModel;
-use AssemblyAI\Enums\SummaryType;
 use AssemblyAI\Parameters\TranscriptParams;
 
 // Retrieve API key from environment variable or fallback:
@@ -24,8 +22,7 @@ $params = TranscriptParams::create($audioUrl)
     ->withSpeechModels([SpeechModel::Universal35Pro, SpeechModel::Universal2])
     ->withSpeakerLabels(enabled: true)
     ->withAutoChapters(true)
-    ->withSentimentAnalysis(true)
-    ->withSummarization(SummaryType::Headline, SummaryModel::Informative);
+    ->withSentimentAnalysis(true);
 
 $transcript = $client->transcribe(
     audio: $audioUrl,

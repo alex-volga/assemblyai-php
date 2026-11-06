@@ -7,6 +7,7 @@ namespace AssemblyAI\Parameters;
 use AssemblyAI\Enums\PiiPolicy;
 use AssemblyAI\Enums\PiiSubstitution;
 use AssemblyAI\Enums\SpeechModel;
+use AssemblyAI\Enums\SummaryEffort;
 use AssemblyAI\Enums\SummaryModel;
 use AssemblyAI\Enums\SummaryType;
 
@@ -21,6 +22,7 @@ final class TranscriptParams
      * @param array<string, mixed> $extra
      * @param list<SpeechModel|string>|null $speechModels
      * @param SpeechModel|string|null $speechModel Deprecated: Use $speechModels instead.
+     * @param array<string, mixed>|null $speechUnderstanding
      */
     public function __construct(
         public string $audioUrl,
@@ -61,11 +63,16 @@ final class TranscriptParams
         public ?array $topics = null,
         public array $extra = [],
         public ?array $speechModels = null,
+        public ?array $speechUnderstanding = null,
     ) {
         if ($this->speechModels === null && $this->speechModel !== null) {
             $this->speechModels = [$this->speechModel];
         } elseif ($this->speechModels !== null && $this->speechModel === null && count($this->speechModels) > 0) {
             $this->speechModel = $this->speechModels[0];
+        }
+
+        if ($this->speechUnderstanding === null && ($this->autoChapters || $this->summarization)) {
+            $this->speechUnderstanding = $this->buildSpeechUnderstandingConfig();
         }
     }
 
@@ -135,6 +142,16 @@ final class TranscriptParams
     public function withAutoChapters(bool $enabled = true): self
     {
         $this->autoChapters = $enabled;
+        if ($enabled) {
+            $this->speechUnderstanding ??= [];
+            /** @var array<string, mixed> $req */
+            $req = $this->speechUnderstanding['request'] ?? [];
+            /** @var array<string, mixed> $sum */
+            $sum = $req['summarization'] ?? [];
+            $sum['summary_type'] ??= 'paragraph';
+            $req['summarization'] = $sum;
+            $this->speechUnderstanding['request'] = $req;
+        }
         return $this;
     }
 
@@ -162,13 +179,48 @@ final class TranscriptParams
         return $this;
     }
 
+    /**
+     * @param SummaryType|string $type bullets or paragraph
+     * @param SummaryModel|string|null $model Deprecated: AssemblyAI no longer uses summary_model
+     * @param SummaryEffort|string|null $effort low or medium
+     */
     public function withSummarization(
         SummaryType|string $type = SummaryType::Paragraph,
-        SummaryModel|string $model = SummaryModel::Informative,
+        SummaryModel|string|null $model = null,
+        SummaryEffort|string|null $effort = null,
     ): self {
         $this->summarization = true;
         $this->summaryType = $type;
         $this->summaryModel = $model;
+
+        $typeVal = $type instanceof SummaryType ? $type->value : (string) $type;
+        $normalizedType = match ($typeVal) {
+            'bullets', 'bullets_verbose' => 'bullets',
+            default => 'paragraph',
+        };
+
+        $this->speechUnderstanding ??= [];
+        /** @var array<string, mixed> $req */
+        $req = $this->speechUnderstanding['request'] ?? [];
+        $sumConfig = ['summary_type' => $normalizedType];
+        if ($effort !== null) {
+            $sumConfig['effort'] = $effort instanceof SummaryEffort ? $effort->value : (string) $effort;
+        }
+        $req['summarization'] = $sumConfig;
+        $this->speechUnderstanding['request'] = $req;
+
+        return $this;
+    }
+
+    /**
+     * @param array<string, mixed> $request
+     */
+    public function withSpeechUnderstanding(array $request): self
+    {
+        $this->speechUnderstanding ??= [];
+        /** @var array<string, mixed> $req */
+        $req = $this->speechUnderstanding['request'] ?? [];
+        $this->speechUnderstanding['request'] = array_merge($req, $request);
         return $this;
     }
 
@@ -230,6 +282,39 @@ final class TranscriptParams
     }
 
     /**
+     * @return array<string, mixed>|null
+     */
+    private function buildSpeechUnderstandingConfig(): ?array
+    {
+        if ($this->speechUnderstanding !== null) {
+            return $this->speechUnderstanding;
+        }
+
+        if ($this->autoChapters || $this->summarization) {
+            $summaryType = 'paragraph';
+            if ($this->summaryType !== null) {
+                $typeVal = $this->summaryType instanceof SummaryType ? $this->summaryType->value : (string) $this->summaryType;
+                $summaryType = match ($typeVal) {
+                    'bullets', 'bullets_verbose' => 'bullets',
+                    default => 'paragraph',
+                };
+            } elseif ($this->summarization && !$this->autoChapters) {
+                $summaryType = 'bullets';
+            }
+
+            return [
+                'request' => [
+                    'summarization' => [
+                        'summary_type' => $summaryType,
+                    ],
+                ],
+            ];
+        }
+
+        return null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     public function toArray(): array
@@ -244,9 +329,12 @@ final class TranscriptParams
             $speechModels,
         ) : null;
 
+        $speechUnderstanding = $this->buildSpeechUnderstandingConfig();
+
         $data = [
             'audio_url' => $this->audioUrl,
             'speech_models' => $serializedSpeechModels,
+            'speech_understanding' => $speechUnderstanding,
             'language_code' => $this->languageCode,
             'language_detection' => $this->languageDetection,
             'punctuate' => $this->punctuate,
@@ -271,13 +359,9 @@ final class TranscriptParams
             'speakers_expected' => $this->speakersExpected,
             'content_safety' => $this->contentSafety,
             'iab_categories' => $this->iabCategories,
-            'auto_chapters' => $this->autoChapters,
             'sentiment_analysis' => $this->sentimentAnalysis,
             'auto_highlights' => $this->autoHighlights,
             'entity_detection' => $this->entityDetection,
-            'summarization' => $this->summarization,
-            'summary_model' => $this->summaryModel instanceof SummaryModel ? $this->summaryModel->value : $this->summaryModel,
-            'summary_type' => $this->summaryType instanceof SummaryType ? $this->summaryType->value : $this->summaryType,
             'custom_spelling' => $this->customSpelling,
             'disfluencies' => $this->disfluencies,
             'prompt' => $this->prompt,
@@ -295,6 +379,23 @@ final class TranscriptParams
             }
             unset($merged['speech_model']);
         }
+
+        if (isset($merged['auto_chapters'])) {
+            if ($merged['auto_chapters'] && !isset($merged['speech_understanding']['request']['summarization'])) {
+                $merged['speech_understanding']['request']['summarization'] = ['summary_type' => 'paragraph'];
+            }
+            unset($merged['auto_chapters']);
+        }
+
+        if (isset($merged['summarization'])) {
+            if ($merged['summarization'] && !isset($merged['speech_understanding']['request']['summarization'])) {
+                $type = isset($merged['summary_type']) ? (string) $merged['summary_type'] : 'paragraph';
+                $normType = in_array($type, ['bullets', 'bullets_verbose'], true) ? 'bullets' : 'paragraph';
+                $merged['speech_understanding']['request']['summarization'] = ['summary_type' => $normType];
+            }
+            unset($merged['summarization']);
+        }
+        unset($merged['summary_model'], $merged['summary_type']);
 
         return array_filter($merged, static fn ($v) => $v !== null);
     }

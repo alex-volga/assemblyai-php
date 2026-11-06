@@ -12,6 +12,7 @@ final readonly class AutoChapter
         public string $gist,
         public int $start,
         public int $end,
+        public ?string $text = null,
     ) {
     }
 
@@ -20,12 +21,18 @@ final readonly class AutoChapter
      */
     public static function fromArray(array $data): self
     {
+        $text = isset($data['text']) ? (string) $data['text'] : (isset($data['summary']) ? (string) $data['summary'] : null);
+        $summary = (string) ($data['summary'] ?? $text ?? '');
+        $headline = (string) ($data['headline'] ?? '');
+        $gist = (string) ($data['gist'] ?? $headline);
+
         return new self(
-            summary: (string) ($data['summary'] ?? ''),
-            headline: (string) ($data['headline'] ?? ''),
-            gist: (string) ($data['gist'] ?? ''),
+            summary: $summary,
+            headline: $headline,
+            gist: $gist,
             start: (int) ($data['start'] ?? 0),
             end: (int) ($data['end'] ?? 0),
+            text: $text,
         );
     }
 }

@@ -152,6 +152,52 @@ final class ValueObjectsTest extends TestCase
         $this->assertCount(1, $transcript->chapters);
     }
 
+    public function testTranscriptWithSpeechUnderstanding(): void
+    {
+        $transcript = Transcript::fromArray([
+            'id' => 'trans-su-456',
+            'status' => 'completed',
+            'audio_url' => 'https://example.com/audio.mp3',
+            'text' => 'Full transcribed text.',
+            'speech_understanding' => [
+                'request' => [
+                    'summarization' => [
+                        'summary_type' => 'paragraph',
+                    ],
+                ],
+                'response' => [
+                    'summarization' => [
+                        [
+                            'headline' => 'Section 1',
+                            'text' => 'Discussion about product launch.',
+                            'start' => 0,
+                            'end' => 15000,
+                        ],
+                        [
+                            'headline' => 'Section 2',
+                            'text' => 'Discussion about marketing strategy.',
+                            'start' => 15000,
+                            'end' => 30000,
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $this->assertCount(2, $transcript->chapters);
+        $this->assertSame('Section 1', $transcript->chapters[0]->headline);
+        $this->assertSame('Discussion about product launch.', $transcript->chapters[0]->text);
+        $this->assertSame('Discussion about product launch.', $transcript->chapters[0]->summary);
+        $this->assertSame('Section 1', $transcript->chapters[0]->gist);
+        $this->assertSame(0, $transcript->chapters[0]->start);
+        $this->assertSame(15000, $transcript->chapters[0]->end);
+
+        $this->assertNotNull($transcript->summary);
+        $this->assertStringContainsString('Section 1: Discussion about product launch.', $transcript->summary);
+        $this->assertStringContainsString('Section 2: Discussion about marketing strategy.', $transcript->summary);
+        $this->assertNotNull($transcript->speechUnderstanding);
+    }
+
     public function testTranscriptList(): void
     {
         $list = TranscriptList::fromArray([

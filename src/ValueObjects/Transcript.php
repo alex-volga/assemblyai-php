@@ -15,6 +15,7 @@ final readonly class Transcript
      * @param list<SentimentResult> $sentimentAnalysisResults
      * @param list<Entity> $entities
      * @param list<string>|null $speechModels
+     * @param array<string, mixed>|null $speechUnderstanding
      * @param array<string, mixed> $raw
      */
     public function __construct(
@@ -41,6 +42,7 @@ final readonly class Transcript
         public array $raw = [],
         public ?string $speechModelUsed = null,
         public ?array $speechModels = null,
+        public ?array $speechUnderstanding = null,
     ) {
     }
 
@@ -77,6 +79,17 @@ final readonly class Transcript
                     $chapters[] = AutoChapter::fromArray($c);
                 }
             }
+        } elseif (isset($data['speech_understanding']['response']['summarization'])) {
+            $sumData = $data['speech_understanding']['response']['summarization'];
+            /** @var list<mixed> $items */
+            $items = isset($sumData['summary']) && is_array($sumData['summary'])
+                ? $sumData['summary']
+                : (is_array($sumData) ? $sumData : []);
+            foreach ($items as $c) {
+                if (is_array($c)) {
+                    $chapters[] = AutoChapter::fromArray($c);
+                }
+            }
         }
 
         $sentiments = [];
@@ -106,6 +119,25 @@ final readonly class Transcript
             $speechModels = array_values(array_map(static fn ($m) => (string) $m, $data['speech_models']));
         }
 
+        $summary = isset($data['summary']) ? (string) $data['summary'] : null;
+        if ($summary === null && $chapters !== []) {
+            $summaryLines = [];
+            foreach ($chapters as $ch) {
+                $content = $ch->text ?? $ch->summary;
+                if ($content !== '') {
+                    $summaryLines[] = $ch->headline !== '' ? "- {$ch->headline}: {$content}" : "- {$content}";
+                }
+            }
+            if ($summaryLines !== []) {
+                $summary = implode("\n", $summaryLines);
+            }
+        }
+
+        /** @var array<string, mixed>|null $speechUnderstanding */
+        $speechUnderstanding = isset($data['speech_understanding']) && is_array($data['speech_understanding'])
+            ? $data['speech_understanding']
+            : null;
+
         return new self(
             id: (string) ($data['id'] ?? ''),
             status: $status,
@@ -119,7 +151,7 @@ final readonly class Transcript
             confidence: isset($data['confidence']) ? (float) $data['confidence'] : null,
             audioDuration: isset($data['audio_duration']) ? (float) $data['audio_duration'] : null,
             error: isset($data['error']) ? (string) $data['error'] : null,
-            summary: isset($data['summary']) ? (string) $data['summary'] : null,
+            summary: $summary,
             languageCode: isset($data['language_code']) ? (string) $data['language_code'] : null,
             speechModel: $speechModel,
             punctuate: isset($data['punctuate']) ? (bool) $data['punctuate'] : null,
@@ -130,6 +162,7 @@ final readonly class Transcript
             raw: $data,
             speechModelUsed: $speechModelUsed ?? $speechModel,
             speechModels: $speechModels,
+            speechUnderstanding: $speechUnderstanding,
         );
     }
 

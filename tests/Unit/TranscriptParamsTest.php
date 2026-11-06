@@ -7,6 +7,7 @@ namespace AssemblyAI\Tests\Unit;
 use AssemblyAI\Enums\PiiPolicy;
 use AssemblyAI\Enums\PiiSubstitution;
 use AssemblyAI\Enums\SpeechModel;
+use AssemblyAI\Enums\SummaryEffort;
 use AssemblyAI\Enums\SummaryModel;
 use AssemblyAI\Enums\SummaryType;
 use AssemblyAI\Parameters\TranscriptParams;
@@ -43,12 +44,19 @@ final class TranscriptParamsTest extends TestCase
         $this->assertSame('en_us', $array['language_code']);
         $this->assertTrue($array['punctuate']);
         $this->assertTrue($array['format_text']);
-        $this->assertTrue($array['auto_chapters']);
+        $this->assertSame([
+            'request' => [
+                'summarization' => [
+                    'summary_type' => 'bullets',
+                ],
+            ],
+        ], $array['speech_understanding']);
+        $this->assertArrayNotHasKey('auto_chapters', $array);
+        $this->assertArrayNotHasKey('summarization', $array);
+        $this->assertArrayNotHasKey('summary_type', $array);
+        $this->assertArrayNotHasKey('summary_model', $array);
         $this->assertTrue($array['sentiment_analysis']);
         $this->assertTrue($array['entity_detection']);
-        $this->assertTrue($array['summarization']);
-        $this->assertSame('bullets', $array['summary_type']);
-        $this->assertSame('informative', $array['summary_model']);
         $this->assertTrue($array['redact_pii']);
         $this->assertSame(['email_address', 'phone_number'], $array['redact_pii_policies']);
         $this->assertSame('hash', $array['redact_pii_sub']);
@@ -84,5 +92,58 @@ final class TranscriptParamsTest extends TestCase
 
         $this->assertSame(['universal-2'], $array['speech_models']);
         $this->assertArrayNotHasKey('speech_model', $array);
+    }
+
+    public function testAutoChaptersConvertsToSpeechUnderstanding(): void
+    {
+        $params = TranscriptParams::create('https://example.com/audio.mp3')
+            ->withAutoChapters(true);
+
+        $array = $params->toArray();
+
+        $this->assertSame([
+            'request' => [
+                'summarization' => [
+                    'summary_type' => 'paragraph',
+                ],
+            ],
+        ], $array['speech_understanding']);
+        $this->assertArrayNotHasKey('auto_chapters', $array);
+    }
+
+    public function testSummarizationWithEffort(): void
+    {
+        $params = TranscriptParams::create('https://example.com/audio.mp3')
+            ->withSummarization(SummaryType::Bullets, effort: SummaryEffort::Medium);
+
+        $array = $params->toArray();
+
+        $this->assertSame([
+            'request' => [
+                'summarization' => [
+                    'summary_type' => 'bullets',
+                    'effort' => 'medium',
+                ],
+            ],
+        ], $array['speech_understanding']);
+    }
+
+    public function testLegacyAutoChaptersAndSummarizationInExtra(): void
+    {
+        $params = TranscriptParams::create('https://example.com/audio.mp3')
+            ->withExtra('auto_chapters', true)
+            ->withExtra('summary_model', 'informative');
+
+        $array = $params->toArray();
+
+        $this->assertSame([
+            'request' => [
+                'summarization' => [
+                    'summary_type' => 'paragraph',
+                ],
+            ],
+        ], $array['speech_understanding']);
+        $this->assertArrayNotHasKey('auto_chapters', $array);
+        $this->assertArrayNotHasKey('summary_model', $array);
     }
 }
