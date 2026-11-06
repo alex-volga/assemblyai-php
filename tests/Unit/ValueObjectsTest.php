@@ -131,6 +131,8 @@ final class ValueObjectsTest extends TestCase
             'chapters' => [
                 ['headline' => 'Chapter 1', 'summary' => 'Summary 1', 'gist' => 'Gist 1', 'start' => 0, 'end' => 12500],
             ],
+            'speech_model_used' => 'universal-3-5-pro',
+            'speech_models' => ['universal-3-5-pro', 'universal-2'],
         ]);
 
         $this->assertSame('trans-123', $transcript->id);
@@ -142,6 +144,9 @@ final class ValueObjectsTest extends TestCase
         $this->assertFalse($transcript->hasError());
         $this->assertSame('Full transcribed text here.', $transcript->text);
         $this->assertSame(12.5, $transcript->audioDuration);
+        $this->assertSame('universal-3-5-pro', $transcript->speechModel);
+        $this->assertSame('universal-3-5-pro', $transcript->speechModelUsed);
+        $this->assertSame(['universal-3-5-pro', 'universal-2'], $transcript->speechModels);
         $this->assertCount(1, $transcript->words);
         $this->assertCount(1, $transcript->utterances);
         $this->assertCount(1, $transcript->chapters);

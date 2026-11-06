@@ -14,6 +14,7 @@ final readonly class Transcript
      * @param list<AutoChapter> $chapters
      * @param list<SentimentResult> $sentimentAnalysisResults
      * @param list<Entity> $entities
+     * @param list<string>|null $speechModels
      * @param array<string, mixed> $raw
      */
     public function __construct(
@@ -38,6 +39,8 @@ final readonly class Transcript
         public ?string $webhookUrl = null,
         public ?int $webhookStatusCode = null,
         public array $raw = [],
+        public ?string $speechModelUsed = null,
+        public ?array $speechModels = null,
     ) {
     }
 
@@ -94,6 +97,15 @@ final readonly class Transcript
             }
         }
 
+        $speechModelUsed = isset($data['speech_model_used']) ? (string) $data['speech_model_used'] : null;
+        $legacySpeechModel = isset($data['speech_model']) ? (string) $data['speech_model'] : null;
+        $speechModel = $speechModelUsed ?? $legacySpeechModel;
+
+        $speechModels = null;
+        if (isset($data['speech_models']) && is_array($data['speech_models'])) {
+            $speechModels = array_values(array_map(static fn ($m) => (string) $m, $data['speech_models']));
+        }
+
         return new self(
             id: (string) ($data['id'] ?? ''),
             status: $status,
@@ -109,13 +121,15 @@ final readonly class Transcript
             error: isset($data['error']) ? (string) $data['error'] : null,
             summary: isset($data['summary']) ? (string) $data['summary'] : null,
             languageCode: isset($data['language_code']) ? (string) $data['language_code'] : null,
-            speechModel: isset($data['speech_model']) ? (string) $data['speech_model'] : null,
+            speechModel: $speechModel,
             punctuate: isset($data['punctuate']) ? (bool) $data['punctuate'] : null,
             formatText: isset($data['format_text']) ? (bool) $data['format_text'] : null,
             dualChannel: isset($data['dual_channel']) ? (bool) $data['dual_channel'] : null,
             webhookUrl: isset($data['webhook_url']) ? (string) $data['webhook_url'] : null,
             webhookStatusCode: isset($data['webhook_status_code']) ? (int) $data['webhook_status_code'] : null,
             raw: $data,
+            speechModelUsed: $speechModelUsed ?? $speechModel,
+            speechModels: $speechModels,
         );
     }
 

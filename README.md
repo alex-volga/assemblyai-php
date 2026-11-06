@@ -130,8 +130,8 @@ use AssemblyAI\Parameters\TranscriptParams;
 $params = TranscriptParams::create($uploadUrl)
     // Speaker Diarization
     ->withSpeakerLabels(enabled: true, speakersExpected: 2)
-    // Speech Model and Language
-    ->withSpeechModel(SpeechModel::Universal2)
+    // Speech Models (ordered list with fallback) and Language
+    ->withSpeechModels([SpeechModel::Universal35Pro, SpeechModel::Universal2])
     ->withLanguageCode('en_us') // or ->withLanguageDetection(true)
     // Formatting & Punctuation
     ->withPunctuate(true)

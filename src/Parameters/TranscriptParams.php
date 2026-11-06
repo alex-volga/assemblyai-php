@@ -19,6 +19,8 @@ final class TranscriptParams
      * @param list<string>|null $topics
      * @param array<string, list<string>>|null $customSpelling
      * @param array<string, mixed> $extra
+     * @param list<SpeechModel|string>|null $speechModels
+     * @param SpeechModel|string|null $speechModel Deprecated: Use $speechModels instead.
      */
     public function __construct(
         public string $audioUrl,
@@ -58,7 +60,13 @@ final class TranscriptParams
         public ?bool $customTopics = null,
         public ?array $topics = null,
         public array $extra = [],
+        public ?array $speechModels = null,
     ) {
+        if ($this->speechModels === null && $this->speechModel !== null) {
+            $this->speechModels = [$this->speechModel];
+        } elseif ($this->speechModels !== null && $this->speechModel === null && count($this->speechModels) > 0) {
+            $this->speechModel = $this->speechModels[0];
+        }
     }
 
     public static function create(string $audioUrl): self
@@ -66,9 +74,24 @@ final class TranscriptParams
         return new self(audioUrl: $audioUrl);
     }
 
+    /**
+     * @deprecated Use withSpeechModels() instead.
+     */
     public function withSpeechModel(SpeechModel|string $speechModel): self
     {
         $this->speechModel = $speechModel;
+        $this->speechModels = [$speechModel];
+        return $this;
+    }
+
+    /**
+     * @param array<array-key, SpeechModel|string>|SpeechModel|string $speechModels
+     */
+    public function withSpeechModels(array|SpeechModel|string $speechModels): self
+    {
+        $models = is_array($speechModels) ? array_values($speechModels) : [$speechModels];
+        $this->speechModels = $models;
+        $this->speechModel = $models[0] ?? null;
         return $this;
     }
 
@@ -211,9 +234,19 @@ final class TranscriptParams
      */
     public function toArray(): array
     {
+        $speechModels = $this->speechModels;
+        if ($speechModels === null && $this->speechModel !== null) {
+            $speechModels = [$this->speechModel];
+        }
+
+        $serializedSpeechModels = $speechModels !== null ? array_map(
+            static fn ($m) => $m instanceof SpeechModel ? $m->value : (string) $m,
+            $speechModels,
+        ) : null;
+
         $data = [
             'audio_url' => $this->audioUrl,
-            'speech_model' => $this->speechModel instanceof SpeechModel ? $this->speechModel->value : $this->speechModel,
+            'speech_models' => $serializedSpeechModels,
             'language_code' => $this->languageCode,
             'language_detection' => $this->languageDetection,
             'punctuate' => $this->punctuate,
@@ -255,6 +288,13 @@ final class TranscriptParams
 
         // Merge extra parameters and remove nulls
         $merged = array_merge($data, $this->extra);
+
+        if (isset($merged['speech_model'])) {
+            if (!isset($merged['speech_models'])) {
+                $merged['speech_models'] = [(string) $merged['speech_model']];
+            }
+            unset($merged['speech_model']);
+        }
 
         return array_filter($merged, static fn ($v) => $v !== null);
     }

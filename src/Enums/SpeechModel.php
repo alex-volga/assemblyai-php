@@ -6,8 +6,8 @@ namespace AssemblyAI\Enums;
 
 enum SpeechModel: string
 {
-    case Best = 'best';
-    case Nano = 'nano';
-    case Universal2 = 'universal-2';
+    case Universal35Pro = 'universal-3-5-pro';
+    case Universal36ProPreview = 'universal-3-6-pro-preview';
     case Universal3Pro = 'universal-3-pro';
+    case Universal2 = 'universal-2';
 }

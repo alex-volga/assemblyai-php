@@ -21,7 +21,7 @@ echo "1. Starting audio transcription..." . PHP_EOL;
 
 // Create transcription job with parameters:
 $params = TranscriptParams::create($audioUrl)
-    ->withSpeechModel(SpeechModel::Universal2)
+    ->withSpeechModels([SpeechModel::Universal35Pro, SpeechModel::Universal2])
     ->withSpeakerLabels(enabled: true)
     ->withAutoChapters(true)
     ->withSentimentAnalysis(true)

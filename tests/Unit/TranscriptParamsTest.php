@@ -36,7 +36,8 @@ final class TranscriptParamsTest extends TestCase
         $array = $params->toArray();
 
         $this->assertSame('https://example.com/audio.mp3', $array['audio_url']);
-        $this->assertSame('universal-2', $array['speech_model']);
+        $this->assertSame(['universal-2'], $array['speech_models']);
+        $this->assertArrayNotHasKey('speech_model', $array);
         $this->assertTrue($array['speaker_labels']);
         $this->assertSame(2, $array['speakers_expected']);
         $this->assertSame('en_us', $array['language_code']);
@@ -60,5 +61,28 @@ final class TranscriptParamsTest extends TestCase
         $this->assertSame('Technical podcast about artificial intelligence', $array['prompt']);
         $this->assertSame(['machine learning', 'deep learning'], $array['keyterms_prompt']);
         $this->assertTrue($array['custom_feature']);
+    }
+
+    public function testWithSpeechModelsArray(): void
+    {
+        $params = TranscriptParams::create('https://example.com/audio.mp3')
+            ->withSpeechModels([SpeechModel::Universal35Pro, SpeechModel::Universal2]);
+
+        $array = $params->toArray();
+
+        $this->assertSame(['universal-3-5-pro', 'universal-2'], $array['speech_models']);
+        $this->assertSame(SpeechModel::Universal35Pro, $params->speechModel);
+        $this->assertSame([SpeechModel::Universal35Pro, SpeechModel::Universal2], $params->speechModels);
+    }
+
+    public function testLegacySpeechModelInExtraIsConverted(): void
+    {
+        $params = TranscriptParams::create('https://example.com/audio.mp3')
+            ->withExtra('speech_model', 'universal-2');
+
+        $array = $params->toArray();
+
+        $this->assertSame(['universal-2'], $array['speech_models']);
+        $this->assertArrayNotHasKey('speech_model', $array);
     }
 }
