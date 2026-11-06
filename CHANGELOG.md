@@ -5,7 +5,7 @@ All notable changes to `alex-volga/assemblyai-php` will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-11-06
 
 ### Added
 - Migration to AssemblyAI's LLM-powered Speech Understanding architecture for Summarization and Auto Chapters.
